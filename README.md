@@ -20,7 +20,7 @@
 ## Что нужно
 
 1. Distilla 1 с прошивкой 1.16 или новее, подключённая к домашнему Wi-Fi.
-2. Пакет датчиков [`distilla.yaml`](https://github.com/distilnations/distilla-card/blob/main/distilla.yaml) в папке `/config/packages/` Home Assistant. Замените в нём `192.168.1.50` на IP своей Distilla. Как подключить папку packages, написано в начале файла и в инструкции на https://distilla.site
+2. Пакет датчиков [`distilla.yaml`](https://github.com/distilnations/distilla-card/blob/main/distilla.yaml) в папке `/config/packages/` Home Assistant. Замените в нём `192.168.1.50` на IP своей Distilla. Как подключить папку packages, написано в начале файла и в пошаговой инструкции https://distilla.site/ha
 3. Home Assistant 2024.8 или новее.
 
 ## Установка через HACS
