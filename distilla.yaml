@@ -213,3 +213,52 @@ automation:
         data:
           title: "Distilla ⚠️"
           message: "{{ trigger.to_state.name }}"
+
+  # Выключение тэна через умное реле или розетку. Нагрев отсюда только ВЫКЛЮЧАЕТСЯ, никогда не включается.
+  # Замените switch.ten на имя своего реле в строке «ten:» (Настройки → Объекты). Реле нет — автоматизация ничего не делает.
+  # В самом реле выставьте «после подачи питания — выключено», иначе после отключения света тэн включится сам.
+  - alias: "Distilla — выключить тэн"
+    id: distilla_heater_off
+    mode: queued
+    variables:
+      ten: switch.ten
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.distilla_atmosfera_goriachaia
+        to: "on"
+        id: "атмосфера горячая"
+      - platform: state
+        entity_id: binary_sensor.distilla_voda_propala
+        to: "on"
+        id: "пропала вода"
+      - platform: state
+        entity_id: binary_sensor.distilla_zashchita_srabotala
+        to: "on"
+        id: "сработала защита Distilla"
+      - platform: event
+        event_type: call_service
+        event_data:
+          domain: rest_command
+          service: distilla_stop
+        id: "нажат СТОП"
+      - platform: state
+        entity_id: binary_sensor.distilla_peregonka_idet
+        from: "on"
+        to: "off"
+        id: "перегонка остановлена"
+      - platform: state
+        entity_id: binary_sensor.distilla_peregonka_idet
+        to: "unavailable"
+        for: "00:02:00"
+        id: "Distilla не на связи 2 минуты"
+    condition:
+      - "{{ is_state(ten, 'on') }}"
+    action:
+      - service: homeassistant.turn_off
+        target:
+          entity_id: "{{ ten }}"
+      - service: notify.mobile_app_telefon
+        continue_on_error: true
+        data:
+          title: "Distilla ⛔ Тэн выключен"
+          message: "Причина: {{ trigger.id }}"
