@@ -1,0 +1,84 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Distilla Card — тест</title>
+<style>
+  body{margin:0;background:#111;color:#ddd;font:14px system-ui;padding:16px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,480px));gap:16px;align-items:start}
+  .ctl{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+  .ctl button{padding:6px 10px}
+  #log{font:12px monospace;color:#9c9;margin-top:8px;white-space:pre}
+  ha-card{display:block}
+</style>
+<div class="ctl">
+  <button id="tRun">Перегонка вкл/выкл</button>
+  <button id="tFix">Фикс есть/нет</button>
+  <button id="tWarn">Царга: внимание</button>
+  <button id="tBad">Царга: не норма</button>
+  <button id="tAtm">Атмосфера горячая</button>
+  <button id="tWater">Вода пропала</button>
+  <button id="tOk">Всё в норме</button>
+  <button id="tEmpty">Нет датчиков</button>
+</div>
+<div class="grid">
+  <distilla-card id="c1"></distilla-card>
+  <div><distilla-card id="c2"></distilla-card><div id="log"></div></div>
+</div>
+<script src="../distilla-card.js"></script>
+<script>
+const S = {
+  run:true, fix:true, ts:0, ot:0, atm:false, water:false, empty:false,
+};
+let t0 = Date.now();
+function st(v, attrs) { return { state: String(v), attributes: attrs || {} }; }
+function states() {
+  if (S.empty) return {};
+  const k = (Date.now() - t0) / 1000;
+  const dts = S.ts === 2 ? 0.62 : S.ts === 1 ? 0.34 : 0.03 + 0.02 * Math.sin(k / 4);
+  const fixT = 78.40;
+  return {
+    "binary_sensor.distilla_peregonka_idet": st(S.run ? "on" : "off"),
+    "sensor.distilla_kub": st((92.4 + 0.01 * k).toFixed(2)),
+    "sensor.distilla_tsarga": st((fixT + dts).toFixed(2)),
+    "sensor.distilla_otbor": st((78.10 + 0.02 * Math.sin(k / 3)).toFixed(2)),
+    "sensor.distilla_atmosfera_tsa": st(S.atm ? "47.3" : "31.2"),
+    "sensor.distilla_voda_vkhod": st("14.8"),
+    "sensor.distilla_voda_vykhod": st(S.water ? "61.0" : "38.6"),
+    "sensor.distilla_fiks_tsargi": st(S.fix ? fixT : "unavailable"),
+    "sensor.distilla_delta_tsargi": st(S.fix ? dts.toFixed(2) : "unavailable"),
+    "sensor.distilla_delta_otbora": st(S.fix ? "0.02" : "unavailable"),
+    "sensor.distilla_status_tsargi": st(S.ts),
+    "sensor.distilla_status_otbora": st(S.ot),
+    "sensor.distilla_raskhod_vody": st(S.water ? "0.00" : "1.62"),
+    "sensor.distilla_voda_za_peregon": st("84.3"),
+    "sensor.distilla_davlenie": st("748.3"),
+    "sensor.distilla_batareia": st("76"),
+    "sensor.distilla_temperatura_v_korpuse": st("29.4"),
+    "sensor.distilla_wi_fi": st("-58"),
+    "sensor.distilla_rezhim": st("Ректификация"),
+    "sensor.distilla_proshivka": st("1.20.0-c3"),
+    "binary_sensor.distilla_tsarga_ne_v_norme": st(S.ts === 2 ? "on" : "off"),
+    "binary_sensor.distilla_atmosfera_goriachaia": st(S.atm ? "on" : "off"),
+    "binary_sensor.distilla_voda_propala": st(S.water ? "on" : "off"),
+    "binary_sensor.distilla_zashchita_srabotala": st("off"),
+    "binary_sensor.distilla_telegram_na_sviazi": st("on"),
+  };
+}
+const log = m => { document.getElementById("log").textContent = new Date().toLocaleTimeString() + "  " + m + "\n" + document.getElementById("log").textContent; };
+const hass = () => ({ states: states(), callService: (d, s, data) => { log(`callService ${d}.${s}`); return Promise.resolve(); } });
+const c1 = document.getElementById("c1"), c2 = document.getElementById("c2");
+c1.setConfig({ title: "Distilla 1", plates: 12, cube_volume: 20, tsarga_label: "Царга ММЦ · 25 см" });
+c2.setConfig({ title: "Дачная колонна", show_tiles: false });
+const tick = () => { c1.hass = hass(); c2.hass = hass(); };
+tick(); setInterval(tick, 2000);
+document.addEventListener("hass-more-info", e => log("more-info " + e.detail.entityId));
+const on = (id, f) => document.getElementById(id).onclick = () => { f(); tick(); };
+on("tRun", () => S.run = !S.run);
+on("tFix", () => S.fix = !S.fix);
+on("tWarn", () => S.ts = 1);
+on("tBad", () => S.ts = 2);
+on("tAtm", () => S.atm = true);
+on("tWater", () => S.water = true);
+on("tOk", () => Object.assign(S, { ts: 0, ot: 0, atm: false, water: false, empty: false, run: true, fix: true }));
+on("tEmpty", () => S.empty = !S.empty);
+</script>

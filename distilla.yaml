@@ -1,0 +1,215 @@
+# Distilla 1 → Home Assistant
+# Положите файл в папку /config/packages/ (см. инструкцию) и замените
+# 192.168.1.50 на IP-адрес вашей Distilla (он есть в шапке веб-панели).
+
+rest:
+  - resource: http://192.168.1.50/api/state
+    scan_interval: 10
+    timeout: 8
+    sensor:
+      # --- Температуры ---
+      - name: "Distilla Куб"
+        unique_id: distilla_cube
+        value_template: "{{ value_json.temps.cube }}"
+        availability: "{{ value_json.temps.cube is not none }}"
+        unit_of_measurement: "°C"
+        device_class: temperature
+        state_class: measurement
+      - name: "Distilla Царга"
+        unique_id: distilla_tsarga
+        value_template: "{{ value_json.temps.tsarga }}"
+        availability: "{{ value_json.temps.tsarga is not none }}"
+        unit_of_measurement: "°C"
+        device_class: temperature
+        state_class: measurement
+      - name: "Distilla Отбор"
+        unique_id: distilla_otbor
+        value_template: "{{ value_json.temps.otbor }}"
+        availability: "{{ value_json.temps.otbor is not none }}"
+        unit_of_measurement: "°C"
+        device_class: temperature
+        state_class: measurement
+      - name: "Distilla Атмосфера (ТСА)"
+        unique_id: distilla_atm
+        value_template: "{{ value_json.temps.atm }}"
+        availability: "{{ value_json.temps.atm is not none }}"
+        unit_of_measurement: "°C"
+        device_class: temperature
+        state_class: measurement
+      - name: "Distilla Вода вход"
+        unique_id: distilla_win
+        value_template: "{{ value_json.temps.win }}"
+        availability: "{{ value_json.temps.win is not none }}"
+        unit_of_measurement: "°C"
+        device_class: temperature
+        state_class: measurement
+      - name: "Distilla Вода выход"
+        unique_id: distilla_wout
+        value_template: "{{ value_json.temps.wout }}"
+        availability: "{{ value_json.temps.wout is not none }}"
+        unit_of_measurement: "°C"
+        device_class: temperature
+        state_class: measurement
+
+      # --- Фиксация и дельты ---
+      - name: "Distilla Фикс царги"
+        unique_id: distilla_fix_ts
+        value_template: "{{ value_json.fix }}"
+        availability: "{{ value_json.fix is not none }}"
+        unit_of_measurement: "°C"
+      - name: "Distilla Дельта царги"
+        unique_id: distilla_delta_ts
+        value_template: "{{ value_json.dTs | round(2) }}"
+        availability: "{{ value_json.dTs is not none }}"
+        unit_of_measurement: "°C"
+        state_class: measurement
+      - name: "Distilla Дельта отбора"
+        unique_id: distilla_delta_ot
+        value_template: "{{ value_json.dOt | round(2) }}"
+        availability: "{{ value_json.dOt is not none }}"
+        unit_of_measurement: "°C"
+        state_class: measurement
+      # 0 — норма, 1 — внимание, 2 — не норма (так же считает прошивка). Нужны карточке Distilla Card.
+      - name: "Distilla Статус царги"
+        unique_id: distilla_ts_state
+        value_template: "{{ value_json.tsS }}"
+      - name: "Distilla Статус отбора"
+        unique_id: distilla_ot_state
+        value_template: "{{ value_json.otS }}"
+
+      # --- Вода, давление, питание ---
+      - name: "Distilla Расход воды"
+        unique_id: distilla_flow
+        value_template: "{{ value_json.flow | round(2) }}"
+        availability: "{{ value_json.flow is not none }}"
+        unit_of_measurement: "L/min"
+        device_class: volume_flow_rate
+        state_class: measurement
+      - name: "Distilla Вода за перегон"
+        unique_id: distilla_water_total
+        value_template: "{{ value_json.waterL | round(1) }}"
+        unit_of_measurement: "L"
+        device_class: water
+        state_class: total_increasing
+      - name: "Distilla Давление"
+        unique_id: distilla_pressure
+        value_template: "{{ value_json.pressure | round(1) }}"
+        availability: "{{ value_json.pressure is not none }}"
+        unit_of_measurement: "mmHg"
+        device_class: atmospheric_pressure
+        state_class: measurement
+      - name: "Distilla Батарея"
+        unique_id: distilla_battery
+        value_template: "{{ value_json.bpct }}"
+        availability: "{{ value_json.batt }}"
+        unit_of_measurement: "%"
+        device_class: battery
+      - name: "Distilla Температура в корпусе"
+        unique_id: distilla_box
+        value_template: "{{ value_json.sys.bmpT | round(1) }}"
+        availability: "{{ value_json.sys.bmpT is not none }}"
+        unit_of_measurement: "°C"
+        device_class: temperature
+
+      # --- Служебное ---
+      - name: "Distilla Режим"
+        unique_id: distilla_mode
+        value_template: >
+          {{ {'rect':'Ректификация','dist':'Дистилляция','pot':'Pot Still',
+              'aroma':'Аромат','brew':'Пивоварня'}.get(value_json.cfg.mode, value_json.cfg.mode) }}
+      - name: "Distilla Тревог за перегон"
+        unique_id: distilla_alarms
+        value_template: "{{ value_json.alarms }}"
+      - name: "Distilla Wi-Fi"
+        unique_id: distilla_rssi
+        value_template: "{{ value_json.sys.rssi }}"
+        unit_of_measurement: "dBm"
+        device_class: signal_strength
+      - name: "Distilla Прошивка"
+        unique_id: distilla_fw
+        value_template: "{{ value_json.fw }}"
+
+    binary_sensor:
+      - name: "Distilla Перегонка идёт"
+        unique_id: distilla_run
+        value_template: "{{ value_json.runActive }}"
+        device_class: running
+      - name: "Distilla Царга не в норме"
+        unique_id: distilla_delta_alarm
+        value_template: "{{ value_json.deltaOn }}"
+        device_class: problem
+      - name: "Distilla Атмосфера горячая"
+        unique_id: distilla_atm_alarm
+        value_template: "{{ value_json.atmOn }}"
+        device_class: heat
+      - name: "Distilla Вода пропала"
+        unique_id: distilla_water_alarm
+        value_template: "{{ value_json.flowOn }}"
+        device_class: problem
+      - name: "Distilla Защита сработала"
+        unique_id: distilla_heater_cut
+        value_template: "{{ value_json.heaterCut }}"
+        device_class: safety
+      - name: "Distilla Телеграм на связи"
+        unique_id: distilla_tg
+        value_template: "{{ value_json.sys.tg }}"
+        device_class: connectivity
+
+# Команды — те же, что кнопки на веб-панели.
+# Команды «включить нагрев» здесь нет специально: нагрев включается только руками.
+rest_command:
+  distilla_fix:
+    url: http://192.168.1.50/api/cmd
+    method: POST
+    content_type: "application/json"
+    payload: '{"cmd":"fix"}'
+  distilla_fix_otbor:
+    url: http://192.168.1.50/api/cmd
+    method: POST
+    content_type: "application/json"
+    payload: '{"cmd":"fixo"}'
+  distilla_unfix:
+    url: http://192.168.1.50/api/cmd
+    method: POST
+    content_type: "application/json"
+    payload: '{"cmd":"unfix"}'
+  distilla_ack:
+    url: http://192.168.1.50/api/cmd
+    method: POST
+    content_type: "application/json"
+    payload: '{"cmd":"ack"}'
+  distilla_mute:
+    url: http://192.168.1.50/api/cmd
+    method: POST
+    content_type: "application/json"
+    payload: '{"cmd":"mute"}'
+  distilla_recv:
+    url: http://192.168.1.50/api/cmd
+    method: POST
+    content_type: "application/json"
+    payload: '{"cmd":"recv"}'
+  distilla_stop:
+    url: http://192.168.1.50/api/cmd
+    method: POST
+    content_type: "application/json"
+    payload: '{"cmd":"stop"}'
+
+# Пример автоматизации: важные тревоги — на телефон через приложение Home Assistant.
+# Замените notify.mobile_app_telefon на имя своего телефона (Инструменты разработчика → Действия → notify).
+automation:
+  - alias: "Distilla — тревога"
+    id: distilla_alarm_notify
+    mode: queued
+    trigger:
+      - platform: state
+        entity_id:
+          - binary_sensor.distilla_atmosfera_goriachaia
+          - binary_sensor.distilla_voda_propala
+          - binary_sensor.distilla_zashchita_srabotala
+          - binary_sensor.distilla_tsarga_ne_v_norme
+        to: "on"
+    action:
+      - service: notify.mobile_app_telefon
+        data:
+          title: "Distilla ⚠️"
+          message: "{{ trigger.to_state.name }}"
